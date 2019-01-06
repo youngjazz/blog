@@ -7,19 +7,19 @@ categories: 技术
 
 ## 消费者和生产者
 
+<!--more-->
+
 生产者、消费者与Rabbit代理服务器支架创建一条TCP连接，一旦连接打开，应用程序就可以创建一条AMQP信道。信道是建立在“真实的”TCP连接内的虚拟连接。AMQP命令都是通过信道发送出去的。每条信道都会被指派一个唯一ID，发布消息、订阅队列、接受消息都是通过信道完成。
 
 那为什么不直接通过TCP连接发送AMQP命令呢？那是因为对操作系统来说建立和销毁TCP会话是非常昂贵的，尤其是在高峰期有成百上千的连接，浪费TCP连接，同事系统每秒只能建立这么点连接数是远远满足不了需求的。一条TCP连接，同时保证每个线程的私密性。可以把它想象为光纤，而TCP连接就像电缆。
 
-![AMQP信道和连接](http://p7b5cwgjy.bkt.clouddn.com/AMQP%E4%BF%A1%E9%81%93)
 
-<!--more-->
 
 ## 队列
 
 AMQP消息路由必须有三部分：交换器、队列和绑定。生产者把消息发布到交换器上；消息最终到达队列，并被消费者接收；绑定决定了消息如何从路由器到特定队列。
 
-![交换器、绑定、队列](http://p7b5cwgjy.bkt.clouddn.com/AQMP%E6%A0%88%EF%BC%9A%E4%BA%A4%E6%8D%A2%E5%99%A8%E3%80%81%E7%BB%91%E5%AE%9A%EF%BC%8C%E4%BB%A5%E5%8F%8A%E9%98%9F%E5%88%97.png)
+
 
 - 当队列有至少一个消费者订阅，新的消息会立即发送给这些消费者
 - 如果无人订阅，消息会在队列中等待
@@ -39,4 +39,15 @@ AMQP消息路由必须有三部分：交换器、队列和绑定。生产者把�
 - 队列是Rabbit中消息的终点(除非进入黑洞)
 
 ## 交换器和绑定
+
+![](https://ws3.sinaimg.cn/large/006tNbRwgy1fyk5psl278j31es0p6qv5.jpg)
+
+交换器属性：
+
+- Name
+- Type： direct、topic、fanout、headers
+- Durability：是否需要持久化
+- Auto Delete：当最后一个绑定到Exchange上的队列删除后，自动删除该Exchange
+- Internal：默认false， 是否用于RabbitMQ内部使用
+- Arguments：扩展参数，扩展AMQP协议制定化使用
 

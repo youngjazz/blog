@@ -5,14 +5,19 @@ tags: java基础
 categories: 技术
 ---
 ## 运行时类型信息使得你在程序运行时发现和使用类型信息
+
 我们如何使用类型信息呢？主要有两种方式：一是传统的**RTTI**，它假设在编译时我们直到所有的类型；二是**反射机制**，它允许我们在运行时发现和使用类的信息。
+
+<!--more-->
+
 ## 为什么使用RTTI（Run-Time Type Identification）
+
 ![这里写图片描述](http://p7b5cwgjy.bkt.clouddn.com/java_RTTI)
 实际上他是把所有的对象当Object持有--会自动将结果转型为Shape。这是RTTI的最基本的使用形式，因为在java中，所有的类型都是在运行时检查的。这也是RTTI名字的含义，在运行时，识别一个对象的类型。
 ## class对象
 类是程序的一部分，每个类都有一个Class对象。所有的类都是在第一次使用时，动态加载到JVM中的。
 
-<!--more-->
+
 ```java
 package type;
 

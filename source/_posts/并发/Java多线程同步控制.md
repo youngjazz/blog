@@ -10,6 +10,8 @@ categories: 技术
 
 重入锁完全可以替代*synchronized*关键字，远优于*synchronized*，但*JDK*之后*synchronized*做了大量优化。差距不大
 
+<!--more-->
+
 ```java
 public class ReenterLock implements Runnable {
 
@@ -48,7 +50,7 @@ public class ReenterLock implements Runnable {
 ### 中断响应
 
 在等待锁的过程中，程序有可能根据需要取消对锁的请求。比如你和朋友约好了一起打球，如果你等了半小时朋友还没到，突然接到电话说有急事不能如约，那你就没必要在等待了。
-<!--more-->
+
 ```java
 
 /**
