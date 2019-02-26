@@ -23,3 +23,18 @@ Ribbon主要组件：
 
 RestTemplate & Feign % Zuul 三者都使用到了Ribbon
 
+
+
+
+
+Zuul
+
+![](https://ws1.sinaimg.cn/large/006tNc79gy1fzfhd42ngej30i40dk0wq.jpg)
+
+
+
+限流方案：
+
+令牌桶限流
+
+![](https://ws3.sinaimg.cn/large/006tNc79gy1fzfk53osq2j30j80cydiw.jpg)

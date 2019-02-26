@@ -1,5 +1,5 @@
 ---
-title: Redis一步站式学习
+title: Redis一站式学习
 date: 2018-11-25 10:45:08
 tags: Redis
 categories: 技术
@@ -29,7 +29,11 @@ categories: 技术
 
 官方给出的数据是 10W OPS
 
-采用C语言编写，纯内存，非阻塞IO，单线程避免线程切换和竞态消耗
+采用C语言编写；纯内存；数据结构简单，对数据的操作也简单；使用IO多路复用，非阻塞IO；单线程避免线程切换和竞态消耗
+
+![](https://ws1.sinaimg.cn/large/006tKfTcgy1g09p9qx0dej31jy0rsanz.jpg)
+
+
 
 ![](https://ws1.sinaimg.cn/large/006tNbRwly1fxk4bx1b65j31480tmk3h.jpg)
 
@@ -39,7 +43,7 @@ categories: 技术
 | SSD      | 35000        | 0.1-0.2ms    | 100-300MB |
 | 机械硬盘 | 100左右      | 10ms         | 100MB左右 |
 
- ### 持久化
+### 持久化
 
 Redis所有数据保存在内存中，对数据的更新将一步地保存到磁盘中。
 
@@ -91,13 +95,13 @@ Redis所有数据保存在内存中，对数据的更新将一步地保存到磁
 
 ### 安装
 
-![image-20181125145435592](/Users/leon/Library/Application Support/typora-user-images/image-20181125145435592.png)
+![image-20181125145435592](https://ws4.sinaimg.cn/large/006tKfTcly1g09p2ilb5cj31oo0iqk03.jpg)
 
 redis-cli 查看配置 config get *
 
 
 
-### 通用明亮
+### 通用
 
 - keys
 - dbsize
@@ -194,7 +198,7 @@ M操作是一个原子操作，而pipeline到了redis服务端还是会拆分pip
 
 redis是可以直接操作位的
 
-![image-20181127161855538](/Users/leon/Library/Application Support/typora-user-images/image-20181127161855538.png)
+![image-20181127161855538](https://ws3.sinaimg.cn/large/006tKfTcly1g09p3bwv0aj319c0o0aj7.jpg)
 
 ![](https://ws3.sinaimg.cn/large/006tNbRwly1fxmp0fdoggj319q0ba75t.jpg)
 
@@ -220,7 +224,7 @@ type geoKey = zset可以看出geo的实现是zset
 
 2.写日志， 如MySQL Binlog, Hbase Hlog, Redis AOF
 
-### RDB
+### RDB(快照，保存某个时间点全量数据)
 
 ![](https://ws4.sinaimg.cn/large/006tNbRwly1fxmpw74zfuj30vw0i4di0.jpg)
 
@@ -262,17 +266,21 @@ rdbcompression yes
 
 3.shutdown
 
-### 持久化的第二种方式AOF
+**RDB有两个问题**：
 
-RDB有两个问题：
+1.全量同步，数据量大时I/O耗时、耗性能
 
-1.耗时、耗性能
+2.redis宕机会丢失上一次备份时间到当前期间的数据
 
-2.不可控、丢失数据
+### 持久化的第二种方式AOF（Append-Only-File保存写状态）
+
+
 
 ![](https://ws4.sinaimg.cn/large/006tNbRwly1fxowzv4rnoj30qk0hk44f.jpg)
 
 AOF：redis会将每一个收到的写命令都通过write函数追加到文件中(默认是 appendonly.aof)
+
+==AOF备份的是接受到的指令==
 
 **AOF三种策略：always，everysec，no**
 
@@ -382,13 +390,41 @@ rrange list 0 -1
 
     3.top命令，看io资源是否紧张
 
-## Redis复制原理
+
+
+### RDB-AOF混合持久化方式
+
+- bgsave做全量备份，aof做增量备份
+
+## Redis数据恢复
+
+RDB与AOF文件共存的情况下，会加载AOF，否则加载RDB
+
+
+
+## Redis同步机制
 
 ### 主从复制
 
 单机有什么问题？机器故障、容量瓶颈、QPS瓶颈
 
 主从复制作用：数据副本、扩展读性能
+
+#### 全同步过程：
+
+- slava发送sync命令到master
+- master启动一个后台进程，将redis中的数据快照保存到文件中
+- master将保存数据快照期间接受到的写命令缓存起来
+- master完成写文件操作后，将该文件发送给slave
+- 使用心得AOF文件替换旧的AOF文件
+- master将这期间收集的增量写命令发送给slave端
+
+#### 增量同步过程：
+
+- master接受到用户操作指令，判断是否需要传播至slave（增删改需要）
+- 将操作记录追加到AOF文件
+- 将操作传播到其他slave：1.对齐主从库；2.往缓存写入指令
+- 将混存中的数据发送给slave
 
 **实现主从：**
 
@@ -403,3 +439,119 @@ rrange list 0 -1
 slave-read-only yes
 
 统一配置、需要重启
+
+#### 主从模式的弊端
+
+不具备高可用性，当master挂掉之后redis将不能对外提供写入操作，于是需要借助其他手段实现高可用。如Redis Sentinel
+
+#### Redis Sentinel
+
+**解决主从同步master宕机后主从切换问题：**
+
+- 监控：检查主从服务器是否运行正常
+- 提醒：通过API向管理员或者其他应用程序发送故障通知
+- 自动故障迁移：主从切换（当检测到master宕机，sentinel会将从服务之一升级为主服务器，并让其他slave改为复制新的master，当客户端试图连接失效的master，sentinel集群也会向客户端返回新master地址，sentinel集群进程间使用流言协议来接收主服务器是否下线的信息，使用投票协议决定是否进行自动故障迁移，以及决定哪个从服务器作为新的主服务器）
+
+#### 流言协议Gossip
+
+反熵：**在杂乱无章中寻求一致**
+
+- 每个节点都是随机与对方通信，最终所有节点的状态达成一致
+- 种子节点定期随机向其他节点发送节点列表以及需要传播的消息
+- 不保证信息一定传递到所有节点，但最终会趋于一致
+
+
+
+## Redis集群原理
+
+### 如何从海量数据中找到所需？
+
+- 分片：按照某种规则去划分数据，分散存储在多个节点上
+- 常规的按照哈希划对分（对服务器数量取模）无法实现节点的动态增减
+
+为此，redis引入了**一致性哈希算法：**对2^32取模，将哈希值空间组织成虚拟的圆环
+
+![](https://ws3.sinaimg.cn/large/006tKfTcgy1g0arphqmdvj30eq0fk41p.jpg)
+
+将数据key使用相同的Hash函数计算出哈希值。假设使用ip哈希之后再环空间上的位置如下;
+
+![](https://ws2.sinaimg.cn/large/006tKfTcgy1g0artbqvssj30f20fkn11.jpg)
+
+当要存储新的数据时，也先计算出hash值，对应换上的位置，存在顺时针方向离他最近的节点上。
+
+![](https://ws4.sinaimg.cn/large/006tKfTcgy1g0aruzk2iij30fg0fq0yb.jpg)
+
+这样我们就可以将A，B，C，D这个四个数据分散储存到四台不同的服务器上了。
+
+现在假设Node C宕机了
+
+![](https://ws1.sinaimg.cn/large/006tKfTcgy1g0arz3xex8j30f60fqq8v.jpg)
+
+此时A，B，D并不会受影响，C会重新定位到Node D里面去。由此可知，如果一台服务器发生故障，受影响的是宕机节点按逆时针方向行走遇到的第一台服务器之间的数据。最小化有损服务。
+
+如果增加一台节点X
+
+![](https://ws2.sinaimg.cn/large/006tKfTcgy1g0as3wletjj30f00fqwkl.jpg)
+
+影响的是新节点X环空间到节点B环空间之间的数据
+
+**Hash环数据倾斜问题：**在服务器节点很少的情况下，容易引起数据分布不均，被缓存的对象，大部分会缓存在某一台或某几台服务器上。
+
+![](https://ws3.sinaimg.cn/large/006tKfTcgy1g0as7ueyv5j30em0fkdls.jpg)
+
+**如何解决数据倾斜的问题呢？**
+一致性哈希算法引入了虚拟节点的机制，即对每一台服务器计算多个hash，计算结果都放置到环中，称之为虚拟节点，可以在服务器ip或者主机名后面添加编号实现
+
+![](https://ws1.sinaimg.cn/large/006tKfTcgy1g0asbbik09j30eq0f4gqf.jpg)
+
+在实际应用中，将虚拟节点设置为32或者更大，即使很少的节点也能实现相对均匀的数据分布，结合redis集群技术，我们还可以在期间引入redis主从同步，sentinel哨兵机制来进一步确保集群的高可用性，这也是主流的做法。
+
+
+
+## 应用
+
+### 如何利用redis实现分布式锁
+
+#### 分布式锁需要解决的问题
+
+- 互斥性， 任意时刻只能有一个客户端获取某个锁。
+- 安全性， 锁只能被持有该锁的客户端删除，不能被别的客户端删除，
+- 死锁， 占有锁的客户端由于其他原因如宕机未能及时释放锁，其他客户端就不能获取到锁而导致死锁，需要有机制来避免。
+- 容错，部分节点宕机，客户端仍然能够获取锁和释放锁。
+
+#### SETNX
+
+> SETNX key value: (即set if not exists) 如果key不存在，创建并赋值
+
+- 时间复杂度O（1），并且是原子操作，故而人们利用这一特性早期用在实现分布式锁
+- 然后利用EXPIRE key seconds， 当key过期后会被自动删除
+
+伪代码如下；
+
+![](https://ws3.sinaimg.cn/large/006tKfTcly1g09rg6vax8j31420a2k01.jpg)
+
+但是这样是有问题的。。。因为是两部操作，就破坏了原子性。
+
+#### SET
+
+![](https://ws2.sinaimg.cn/large/006tKfTcly1g09rjk42poj31mk0sa1ar.jpg)
+
+`set locktarget 123 ex 10 nx`
+
+![](https://ws2.sinaimg.cn/large/006tKfTcly1g09rkoehl6j314a05a43g.jpg)
+
+
+
+
+
+### 大量key同时过期问题
+
+![](https://ws1.sinaimg.cn/large/006tKfTcly1g09tf1wyyxj31d20c4h18.jpg)
+
+在key的过期时间上加上一个随机值即可解决
+
+
+
+### 从海量数据中获取指定前缀的键，生产可用
+
+`scan 0 match key1* count 10`（返回下一个游标，和具体数据，不一定准确可能会重复，需要客户端自己去重；

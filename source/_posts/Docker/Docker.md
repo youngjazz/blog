@@ -1,49 +1,65 @@
-# centos7 安装 docker
+## centos7 安装 docker
+
 - 一键安装 curl -sSL https://get.docker.com/ | sh
 - or https://www.cnblogs.com/wq3435/p/6479768.html
 
-# systemctl start docker
+## 启动docker
 
-# docker 安装 nginx
-```bash
-查看nginx镜像列表
-$ docker search nginx
+` systemctl start docker`
 
-拉去最新nginx镜像
-$ docker pull nginx
+## docker常用操作
+
+### 容器
+
+> 查看所有容器
+
+`docker ps -a`
+
+
+
+> 查看运行中的容器
+
+`docker ps `
+
+
+
+> 停止容器
+
+`docker stop goofy_easley`
+
+
+
+> 启动容器
+
+`docker start goofy_easley`
+
+
+
+> 进入容器
+
+`docker exec -it 5ecf2637f10b /bin/sh`
+
+
+
+> 退出容器
+
+`exit`
+
+
+
+### 镜像
+
+> 删除镜像
+
+```
+docker images
+docker rmi e38bc07ac18e
 ```
 
-# docker 运行 nginx
+前提是没有容器使用该镜像，如果占用了需要先删除容器，然后删除镜像
 
 ```
-docker run --detach \
-    --name staticserver \
-    --publish 80:80 \
-    -v /data/websites/blog:/usr/share/nginx/html:rw \
-    -v /data/config:/etc/nginx:rw \
-    -d nginx
-```
-```
-docker run --detach \
-    --name staticserver \
-    --publish 80:80 \
-    -v /data/websites/blog:/usr/share/nginx/html:rw \
-    -v /data/config/nginx.conf:/etc/nginx/nginx.conf:rw \
-    -v /data/config/servers:/etc/nginx/servers:rw \
-    -v /data/logs/error.log:/var/log/nginx/error.log:rw \
-    -d nginx
+docker ps -a
+docker rm 70cdf9df895e
 ```
 
-## 如果被占用
-
-docker ps -a 查看容器id
-docker rm id
-
-
-## 进入一个运行中的容器
-docker exec -it 775c7c9ee1e1 /bin/bash
-
-## 异常
-`
-Job for docker.service failed because the control process exited with error code. See "systemctl status docker.service" and "journalctl -xe" for details.
-`
